@@ -1,0 +1,64 @@
+function [BACKGROUND, FOREGROUND] = higherlower_image(card, credits, bet)
+    % Initialize a 7x11 foreground and background array
+    background = [ones(7, 11)];
+    foreground = [ones(7, 11)];
+    
+    % Up/Down arrows to change bet and confirm bet
+    Up_Arrow = 75;
+    Down_Arrow = 76;
+    background(4, 4) = Down_Arrow;
+    background(4, 8) = Up_Arrow;
+    background(2, 5) = Down_Arrow;
+    background(2, 7) = Up_Arrow;
+    
+    % Escape Button
+    background(1, 1) = 97;
+
+    % White background behind credits and bet
+    Blanks = 77:79; 
+    background(4, 5:7) = Blanks;
+    background(6, 2:4) = Blanks;
+    
+    % Draw the betting pool in the middle
+    third_digit = mod(bet, 10);
+    second_digit = mod((bet - third_digit) / 10, 10);
+    first_digit = mod((bet - third_digit - second_digit*10) / 100, 10);
+    % draw to the foreground
+    if (first_digit ~= 0)
+        foreground(4, 5) = first_digit + 11;
+        foreground(4, 6) = second_digit + 11;
+        foreground(4, 7) = third_digit + 11;
+    elseif (second_digit ~= 0)
+        foreground(4, 6) = second_digit + 11;
+        foreground(4, 7) = third_digit + 11;
+    elseif (third_digit ~= 0)
+        foreground(4, 7) = third_digit + 11;
+    else
+        foreground(4, 7) = 11;
+    end
+    
+    % Draw the number of credits at the bottom left
+    third_digit = mod(credits, 10);
+    second_digit = mod((credits - third_digit) / 10, 10);
+    first_digit = mod((credits - third_digit - second_digit*10) / 100, 10);
+    % draw to the foreground
+    if (first_digit ~= 0)
+        foreground(6, 2) = first_digit + 11;
+        foreground(6, 3) = second_digit + 11;
+        foreground(6, 4) = third_digit + 11;
+    elseif (second_digit ~= 0)
+        foreground(6, 3) = second_digit + 11;
+        foreground(6, 4) = third_digit + 11;
+    elseif (third_digit ~= 0)
+        foreground(6, 4) = third_digit + 11;
+    else
+        foreground(6, 4) = 11;
+    end
+    
+    % Display the card at the top
+    background(2, 6) = 2;
+    foreground(2, 6) = card + 20;
+
+    BACKGROUND = background;
+    FOREGROUND = foreground;
+end
