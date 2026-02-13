@@ -1,0 +1,209 @@
+% Startup (engine creation):
+%       1. Clear the variables and command window
+%       
+%       2. Create Engine ; sprite size = 16;
+%                          zoom factor = 5;
+%                          background color = [150 100 170];
+%           scene = simpleGameEngine("cards_arrows_mastermind.png", 
+%                                    sprite size, sprite size, zoom factor, 
+%                                    bg color);
+%       3. Initialize the credits to 0
+%
+% While Loop for Game Selection
+%       Create A scene with text: (include credit counter)
+%           "Press 1 for Mastermind (Game - 1 ticket)"
+%           "Press 2 for Black Jack (Game - 1 ticket)"
+%           "Press 3 for Higher/Lower (Game - 1 ticket)"
+%           "Press 4 for Educational Questions (Guess Q's right for tickets)"
+%       Wait for a key press
+%           If 1 && credits > 0:
+%               Play Mastermind:
+%                   Decrease credits by 1
+%                   Initialize the game_state, fg, and bg to a blank round 1: [7,7,7,7]
+%                   Initialize the bet to 0
+%                   Draw the scene: mastermind_logic(0, 0, game_state, answer, credits, bet)
+%                                   mastermind_image(game_state, credits, bet)
+%                                   drawscene(scene, fg, bg)
+%                   While loop:
+%                       Wait for mouse click. Store the col and row
+%                       Break command if clicked top left
+%                       Call for the next game state: mastermind_logic(row, col, game_state, answer, credits, bet)
+%                       Draw the new scene: using mastermind_image(game_state, errors, credits, bet)
+%                                           to get the fg and bg. Then
+%                                           drawScene(fg, bg);
+%                       Check break command
+%                   end
+%           If 2 && credits > 0:
+%               Play Blackjack
+%                   Decrease credits by 1
+%                   Initialize the game state: 
+%                       deck = randperm(52); 
+%                       pCards(1:2) = deck(1:2)
+%                       dCards(1:2) = deck(3:4)
+%                       showcards = 0
+%                       start = 0
+%                   Initialize the bet to 0
+%                   Draw the scene: blackjack_logic('0', pCards, dCards, deck, credits, bet, start)
+%                                   blackjack_image(pCards, dCards, credits, bet, showcards, start)
+%                                   drawScene
+%                                   text: Type: 'h' to hit, 's' to stand,
+%                                               'escape' to return to start
+%                   While loop:
+%                       Wait for input, repeat until the answer is 'h' or
+%                           's' or 'escape'
+%                       Break command if 'escape'
+%                       Next game state using: blackjack_logic(k, pCards, dCards, deck, credits, bet, start)
+%                       Draw game using: blackjack_image(pCards, dCards, credits, bet, showcards, start)
+%                                        drawScene()
+%                                        text: Type: 'h' to hit, 's' to stand,
+%                                                    'escape' to return to start
+%                       Check break/ending command (showcards == 1; k == 'escape')
+%                   end
+%           If 3 && credits > 0:
+%               Play Higher/Lower
+%                   Decrease credits by 1
+%                   Initialize the game state: 
+%                       card = randi([1, 52], 1, 1)
+%                   Initialize the bet to 0
+%                   Draw the scene: higherlower_logic(0, 0, card, credits, bet)
+%                                       ^ returns a new card, changes credits
+%                                   higherlower_image(card, credits, bet)
+%                                   drawScene
+%                   While loop:
+%                       Wait for a mouse input: (row, col)
+%                       Next game state using: higherlower_logic(row, col, card, credits, bet)
+%                       Draw game using: higherlower_image(card, credits, bet)
+%                                        drawScene()
+%                                        text: Type: 'h' to hit, 's' to stand,
+%                                                    'escape' to return to start
+%                       Check break/ending commands
+%                   end
+%           If 4:
+%               while loop:
+%                   Pick a random T/F question from the function true_false()
+%                   Wait for a key input (Loop if not 'y'/'n')
+%                       If Y and true:
+%                           Add 1 to tickets
+%                       If N and false:
+%                           Add 1 to tickets
+%                       If escape, end loop
+%               Repeat Loop
+% end
+
+% function [GAME_STATE, ERRORS, CREDITS, BET] = mastermind_logic(row, col, game_state, answer, bet)
+%       If number of rows of game_state == row clicked
+%           If col clicked is between 4 and 7
+%               switch the value of game_state(row, col - 3) to the next 
+%               (cycle between 1-6)
+%       Else if clicked the 8th col and none of the current colors are
+%                                       blank (7)
+%           Create a new row of the game_state array
+%       Return the game_state
+%       
+%       For each line of the game_state (not including the last), create a 
+%           new line to the errors array: [green, red]
+%               * get the number of each color for the current
+%                 game_state row
+%               * get the number of each color for the answer
+%               * For each color in the right position, subtract the
+%                 number from each color count and add 1 to the num_green
+%               * Find the remaining number of overlap between the
+%                 game_state colors and answer colors
+%       Return the errors (does not change if the round does not change)
+%       
+%       If clicking the up arrow and the height of game_state is 1,
+%           increase the bet by 1.
+%       If clicking the down arrow and the height of game_state is 1,
+%           decrease the bet by 1 but now below 0.
+%       
+%       If the errors is [4, 0], increase the credits by bet.
+%       If the round number is 7 and the errors is not [4, 0], decrease the
+%           credits by bet.
+%       return GAME_STATE, ERRORS, CREDITS, and BET
+% end
+
+% function [PCARDS, DCARDS, CREDITS, BET, SHOWCARDS, START] = blackjack_logic(k, pCards, dCards, deck, credits, bet, start)
+%       if start == 0
+%           if k == 'up arrow' increase bet not beyond num credits
+%           if k == 'down arrow' decrease bet not beyond 0
+%       
+%       if k == 'h' add another card, start = 1
+%       if (k == 's' || SUM(PCARDS)>=21) * repeat adding dealer cards until
+%                                          bust or beats player, 
+%                                        * start = 1
+%                                        * showcards = 1
+%               ** note: ace is worth 11 unless >21, 
+%                        or SUM(dealer cards)>=17 and < SUM(player cards)
+%           if player busts or dealer sum is over player sum
+%               subtract bet from credits
+%           else
+%               add bet to credits
+%       return PCARDS, DCARDS, CREDITS, BET, SHOWCARDS, and START
+% end
+
+% function [CARD, CREDITS, BET] = higherlower_logic(row, col, card, credits, bet)
+%       if row & col == bottom up arrow, increase bet
+%       if row & col == bottom down arrow, decrease bet
+%       if row & col == top up arrow
+%           pick a card 1-52, not the same card
+%           if greater than current card
+%               increase credits by bet
+%           elseif over current card
+%               decrease credits by bet
+%           set CARD to new card
+%       elseif row & col == top down arrow
+%           pick a card 1-52, not the same card
+%           if less than current card
+%               increase credits by bet
+%           elseif over current card
+%               decrease credits by bet
+%           set CARD to new card
+%       else 
+%           set CARD to old card
+%       return CREDITS, and BET
+% end
+
+% function [BACKGROUND, FOREGROUND] = mastermind_image(game_state, errors, credits, bet)
+%       initialize a 7x13 foreground and background array
+%       Set the background:
+%           Up/Down arrows to change bet
+%           White background behind credits and bet
+%           Numbers 1-6 going down for each round
+%           A star on the 7th row to reveal the correct solution
+%       Draw the betting pool
+%       Draw the number of credits
+%       Display error dots
+%       Display the guess dots
+%       return BACKGROUND and FOREGROUND
+% end
+
+% function [BACKGROUND, FOREGROUND] = blackjack_image(pCards, dCards, credits, bet, showcards, start)
+%       initialize a 9x13 foreground and background array
+%       Set the background:
+%           White background behind credits and bet
+%       Display the player cards at the bottom
+%       Display the dealer cards (if showcards == 0 only show 1 card)
+%       Draw the betting pool in the middle
+%       Draw the number of credits at the bottom left
+
+%       return BACKGROUND and FOREGROUND
+% end
+
+% function [BACKGROUND, FOREGROUND] = higherlower_image(card, credits, bet)
+%       initialize a 7x11 foreground and background array
+%       Set the background:
+%           Up/Down arrows to change bet
+%           White background behind credits and bet
+%       Draw the betting pool:
+%       Draw the number of credits at the bottom left:
+%       Display the card at the top
+%       return BACKGROUND and FOREGROUND
+% end
+
+% function [QUESTION, TRUTH] = true_false()
+%       open a file: 'questions.txt'
+%       open a file: 'truths.txt'
+%       i = get a rand int between 1 and length of questions.
+%       QUESTION = i line from 'questions.txt'
+%       TRUTH = i line from 'truths.txt'
+% end
