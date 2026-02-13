@@ -1,0 +1,265 @@
+% Startup (engine creation):
+clear
+clc
+
+% Create Engine
+sSize = 16; %sprite size 
+zFactor = 5; %zoom factor 
+BGC = [150 100 170]; %background color
+
+% Position of text
+x = 50;
+y = 50;
+text_offset = 100;
+centerOffset = 410; % Offset for 'you win' etc for h/l game
+
+scene = simpleGameEngine("cards_arrows_mastermind.png", sSize, sSize, zFactor, BGC);
+
+% Initialize the credits to 0
+credits = 5;
+
+% While Loop for Game Selection
+while (1)
+    clf
+    % Reset credits if over 999
+    if (credits > 999)
+        credits = 999;
+    end
+
+    bg = ones(7, 11); % Blank background
+    fg = ones(7, 11); % Blank foreground
+    
+    % Create A scene with: Text and Credit Counter 
+    textA = 'Press 1 for Mastermind (Game - 1 ticket)';
+    textB = 'Press 2 for Blackjack (Game - 1 ticket)';
+    textC = 'Press 3 for Higher/Lower (Game - 1 ticket)';
+    textD = "Press 4 for Educational Questions (Guess Q's right for tickets)";
+    % Credit Counter
+    bg(6, 2:4) = [77, 78, 79]; % Add credit counter background
+    ones_digit = mod(credits, 10);
+    tens_digit = mod((credits-ones_digit)/10, 10);
+    hundreds_digit = mod((credits-ones_digit-tens_digit*10)/100, 10);
+    num_offset = 11;
+    fg(6, 2:4) = [hundreds_digit + num_offset, tens_digit + num_offset, ones_digit + num_offset];
+    % Draw scene
+    drawScene(scene, bg, fg);
+    title('Game Selector');
+    text(x, y, textA);
+    text(x, y + text_offset, textB);
+    text(x, y + 2*text_offset, textC);
+    text(x, y + 3*text_offset, textD);
+
+    % Wait for a key press, store the value
+    k = getKeyboardInput(scene);
+    % Select Game
+    if (strcmp(k, '1') && credits > 0)
+        clf
+        % Play Mastermind
+        credits = credits - 1;
+        % Initialize Game
+        game_state = [7,7,7,7];
+        errors = [];
+        bet = 0;
+        answer = randi([1, 6], 1, 4);
+        % Draw game image
+        [bg, fg] = mastermind_image(game_state, errors, credits, bet, answer);
+        drawScene(scene, bg, fg);
+        title('Mastermind');
+        % Repeat Rounds
+        while (1)
+            % Wait for mouse click, store the col and row
+            [row, col] = getMouseInput(scene);
+            % Next game state
+            [game_state, errors, credits, bet] = mastermind_logic(row, col, game_state, answer, credits, bet);
+            if (credits > 999)
+                credits = 999;
+            end
+            % Draw game
+            [bg, fg] = mastermind_image(game_state, errors, credits, bet, answer);
+            drawScene(scene, bg, fg);
+            title('Mastermind');
+            % Break commands
+            if (col == 1 && row == 1)
+                if (height(game_state) ~= 1)
+                    credits = credits - bet;
+                end
+                break
+            end
+            if (height(errors)>0 && (height(errors) == 6 || errors(height(errors), 1) == 4))
+                text(x, -y/2, 'Press Escape to Continue')
+                % State if won or lost
+                if (errors(height(errors),1) == 4)
+                    text(x, y/2, 'You Win! :)')
+                else
+                    text(x, y/2, 'You Lose :(')
+                end
+                while (1)
+                    k = getKeyboardInput(scene);
+                    if (strcmp(k, 'escape'))
+                        break
+                    end
+                end
+                break
+            end
+        end
+    elseif (strcmp(k, '2') && credits > 0)
+        clf
+        % Play Blackjack
+        credits = credits - 1;
+        % Initialize Game
+        deck = randperm(52); 
+        pCards = deck(1:2);
+        dCards = deck(3:4);
+        start = 0;
+        bet = 0;
+        showCards = 0;
+        % Draw Game Image
+        [bg, fg] = blackjack_image(pCards, dCards, credits, bet, showCards, start);
+        drawScene(scene, bg, fg);
+        title('Blackjack');
+        text(x, -y/2, "Press: 'escape' to return or 'UP'/'DOWN' to change bet");
+        % Repeat Rounds
+        while (1)
+            % Wait for input, store the value
+            if (start == 0)
+                % Prevent inputting s or h before started
+                k = '0';
+                while ~(strcmp(k, 'escape') || strcmp(k, 'return') || strcmp(k, 'uparrow') || strcmp(k, 'downarrow'))
+                    k = getKeyboardInput(scene);
+                end
+            else
+                k = getKeyboardInput(scene);
+            end
+            % Early Break Command
+            if (strcmp(k, 'escape'))
+                if (start == 1)
+                    credits = credits - bet;
+                end
+                break
+            end
+            % Next game state
+            [pCards, dCards, credits, bet, showCards, start, win] = blackjack_logic(k, pCards, dCards, deck, credits, bet, start);
+            k = '0';
+            if (credits > 999)
+                credits = 999;
+            end
+            % Draw game
+            [bg, fg] = blackjack_image(pCards, dCards, credits, bet, showCards, start);
+            clf
+            drawScene(scene, bg, fg);
+            title('Blackjack');
+            text(x, -y/2, "Type: 'h' to hit, 's' to stand, or 'escape' to forfeit.");
+            if (showCards == 1)
+                clf
+                drawScene(scene, bg, fg);
+                title('Blackjack');
+                % State if won or lost
+                if (win == 1)
+                    text(x, y/2, 'You Win! :)')
+                elseif (win == -1)
+                    text(x, y/2, 'You Lose :(')
+                else 
+                    text(x, y/2, 'You Tied...')
+                end
+                text(x, -y/2, 'Press Escape to Continue')
+                while (1)
+                    k = getKeyboardInput(scene);
+                    if (strcmp(k, 'escape'))
+                        break
+                    end
+                end
+                break
+            end
+        end
+    elseif (strcmp(k, '3') && credits > 0)
+        clf
+        % Play Higher/Lower
+        title('Higher/Lower');
+        credits = credits - 1;
+        % Initialize Game
+        card = randi([1, 52], 1);
+        bet = 0;
+        % Draw Game Image
+        [bg, fg] = higherlower_image(card, credits, bet);
+        drawScene(scene, bg, fg);
+        title('Higher/Lower');
+        % Repeat Rounds
+        while (1)
+            % Wait for input, store the value
+            [row, col] = getMouseInput(scene);
+            % Next game state
+            [card, credits, bet, win] = higherlower_logic(row, col, card, credits, bet);
+            if (credits > 999)
+                credits = 999;
+            end
+            % Draw game
+            clf
+            [bg, fg] = higherlower_image(card, credits, bet);
+            drawScene(scene, bg, fg);
+            title('Higher/Lower');
+            % State if won or lost
+            if (win == 1)
+                text(centerOffset, y, 'You Win! :)')
+            elseif (win == -1)
+                text(centerOffset, y, 'You Lose :(')
+            elseif (win == 0)
+                text(centerOffset, y, 'You Tied...')
+            end
+            % Break Command
+            if (row == 1 && col == 1)
+                break
+            end
+        end
+    elseif (strcmp(k, '4'))
+        % Ask an Engr. Question
+        % Repeat until 'escape' is pressed
+        prevGuess = 0; % Used to state higher/lower
+        while (1)
+            clf
+            % Credit Counter
+            bg = ones(7, 11);
+            fg = ones(7, 11);
+            bg(6, 2:4) = [77, 78, 79]; % Add credit counter background
+            ones_digit = mod(credits, 10);
+            tens_digit = mod((credits-ones_digit)/10, 10);
+            hundreds_digit = mod((credits-ones_digit-tens_digit*10)/100, 10);
+            num_offset = 11;
+            fg(6, 2:4) = [hundreds_digit + num_offset, tens_digit + num_offset, ones_digit + num_offset];
+            drawScene(scene, bg, fg);
+            title('Engineering Questions');
+            text(x, y, "Press 'escape' to exit, 'T' for true, and 'F' for false.");
+            if (prevGuess == 1)
+                text(x, 2*y, 'Correct! :)')
+            elseif (prevGuess == -1)
+                text(x, 2*y, 'Incorrect... :(')
+            end
+            % Pick a random T/F question from the function true_false()
+            [question, truth] = true_false();
+            % Print it to the screen
+            lineSpacing = 20;
+            for i = 1:height(question)
+                text(x, 3*y + i*lineSpacing, question(i));
+            end
+            % Wait for a key input (Loop if not 'y'/'n')
+            while (1)
+                k = getKeyboardInput(scene);
+                if (strcmp(k, 't') || strcmp(k, 'f') || strcmp(k, 'escape'))
+                    break
+                end
+            end
+            % Add credit
+            if (strcmp(k, 'escape'))
+                break;
+            elseif (truth && strcmp(k, 't')) || (~truth && strcmp(k, 'f'))
+                credits = credits + 1;
+                prevGuess = 1;
+            else
+                credits = credits + 1;
+                prevGuess = -1;
+            end
+            if (credits > 999)
+                credits = 999;
+            end
+        end
+    end
+end
