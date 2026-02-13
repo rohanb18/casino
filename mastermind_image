@@ -1,0 +1,104 @@
+function [BACKGROUND, FOREGROUND] = mastermind_image(game_state, errors, credits, bet, answer)
+    % initialize a 7x13 foreground and background array
+    background = ones(7, 13);
+    foreground = ones(7, 13);
+    
+    % Set the background:
+    % Up/Down arrows to change bet
+    Up_Arrow = 75;
+    Down_Arrow = 76;
+    background(2, 10) = Up_Arrow;
+    background(2, 12) = Down_Arrow;
+    % White squares behind digits
+    Blanks = 77:79; 
+    background(1, 10:12) = Blanks;
+    background(7, 10:12) = Blanks;
+    % Blank circles for game (6 row x 4 col)
+    Blank_Circle = 80;
+    background(1:7, 4:7) = Blank_Circle * ones(7, 4);
+    % Numbers 1-6 going down
+    numbers = (1:6)+11; 
+    background(1:6, 3) = numbers;
+    % Star at the bottom for final solution
+    Star = 96;
+    background(7, 3) = Star;
+    
+    % Draw the betting pool numbers
+    ones_digit = mod(bet, 10);
+    tens_digit = mod((bet-ones_digit)/10, 10);
+    hundreds_digit = mod((bet-ones_digit-tens_digit*10)/100, 10);
+    if (hundreds_digit ~= 0)
+        foreground(1, 10) = hundreds_digit + 11;
+        foreground(1, 11) = tens_digit + 11;
+        foreground(1, 12) = ones_digit + 11;
+    elseif (tens_digit ~= 0)
+        foreground(1, 11) = tens_digit + 11;
+        foreground(1, 12) = ones_digit + 11;
+    elseif (ones_digit ~= 0)
+        foreground(1, 12) = ones_digit + 11;
+    else
+        foreground(1, 12) = 11;
+    end
+    
+    % Draw the number of credits
+    ones_digit = mod(credits, 10);
+    tens_digit = mod((credits-ones_digit)/10, 10);
+    hundreds_digit = mod((credits-ones_digit-tens_digit*10)/100, 10);
+    if (hundreds_digit ~= 0)
+        foreground(7, 10) = hundreds_digit + 11;
+        foreground(7, 11) = tens_digit + 11;
+        foreground(7, 12) = ones_digit + 11;
+    elseif (tens_digit ~= 0)
+        foreground(7, 11) = tens_digit + 11;
+        foreground(7, 12) = ones_digit + 11;
+    elseif (ones_digit ~= 0)
+        foreground(7, 12) = ones_digit + 11;
+    else
+        foreground(7, 12) = 11;
+    end
+    
+    % Error dots
+    for k = 1:height(errors)
+        if (errors(k, 1) == 0)
+            foreground(k, 8) = 1;
+        else
+            foreground(k, 8) = 86 + errors(k, 1);
+        end
+        if (errors(k, 1) + errors(k, 2) == 0)
+            background(k, 8) = 1;
+        else
+            background(k, 8) = 90 + errors(k, 2) + errors(k, 1);
+        end
+    end
+
+    % Display the guess dots
+    Circle_Colors = (1:6) + 80; % location of dot colors
+    Circle_Colors(7) = 80; % blank dot
+    for i = 1:min(height(game_state),6)
+        for j = 1:4
+            % Guess dots
+            foreground(i, j+3) = Circle_Colors(game_state(i, j));
+        end
+    end
+    
+    % Display Answers on last round
+    if (height(errors) > 0 && (height(game_state) == 7 || errors(height(errors), 1) == 4))
+        for k = 1:4
+            % Guess dots
+            foreground(7, k+3) = Circle_Colors(answer(k));
+        end
+    end
+    
+    % Display Guess Checker Button
+    if (height(game_state)<7)
+        foreground(height(game_state), 8) = 95;
+    end
+    
+    % Display Cancel Icon
+    if (height(errors)==0 || (height(game_state)<7 && errors(height(errors),1)~=4))
+        foreground(1, 1) = 97;
+    end
+
+    FOREGROUND = foreground;
+    BACKGROUND = background;
+end
