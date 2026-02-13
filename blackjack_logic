@@ -1,0 +1,91 @@
+function [PCARDS, DCARDS, CREDITS, BET, SHOW_CARDS, START, WIN] = blackjack_logic(k, pCards, dCards, deck, credits, bet, start)
+    % Default to tying
+    win = 0;
+    
+    % Confirm bet
+    if (strcmp(k, 'return'))
+        start = 1;
+    end
+    % Change bet only if not shown cards
+    if (start == 0)
+        % Increace bet
+        if (strcmp(k, 'uparrow'))
+            bet = bet + 1;
+            if (bet > credits)
+                bet = credits;
+            end
+        end
+        % Decrease bet
+        if (strcmp(k, 'downarrow'))
+            bet = bet - 1;
+            if (bet < 0)
+                bet = 0;
+            end
+        end
+    end
+    % Hit button
+    if (strcmp(k, 'h') && start == 1)
+        % Add another card, 
+        pCards(length(pCards) + 1) = deck(length(pCards) + 3);
+    end
+    % Stay or bust
+    showCards = 0; % changes to 1 if stay or bust.
+    if ((strcmp(k, 's') || countCards(pCards)==-1) && start == 1)
+        showCards = 1;
+        % Keep adding dealer cards until >=17 or bust or win
+        while (1)
+            if (countCards(dCards) == -1 || countCards(dCards) >= 17 || countCards(dCards)>countCards(pCards))
+                break;
+            end
+            dCards(length(dCards) + 1) = deck(length(dCards) + length(pCards) + 1);
+        end
+        % Win/Lose
+        dealerPoints = countCards(dCards);
+        playerPoints = countCards(pCards);
+        if (playerPoints == -1 || dealerPoints > playerPoints)
+            credits = credits - bet;
+            win = -1;
+        elseif (dealerPoints < playerPoints)
+            credits = credits + bet;
+            win = 1;
+        end
+    end
+    WIN = win;
+    PCARDS = pCards;
+    DCARDS = dCards;
+    CREDITS = credits;
+    BET = bet;
+    SHOW_CARDS = showCards;
+    START = start;
+end
+
+function [SUM] = countCards(cards)
+    numAces = sum(mod(cards-1,13)+1 == 1); % number of aces
+    maxCount = -1; % shows max value, -1 if bust
+    for i = 0:numAces % iterate to get a number under 21
+        count = (numAces-i)*11 + i*1; % count aces
+        for j = 1:length(cards)
+            cardValue = mod(cards(j) - 1, 13) + 1;
+            if (cardValue > 10)
+                cardValue = 10;
+            end
+            if (cardValue ~= 1)
+                % count other cards
+                if (cardValue<=10)
+                    % 2-10
+                    count = count + cardValue;
+                else
+                    % J,Q,K
+                    count = count + 10;
+                end
+        
+            end
+        end
+        if (count<=21)
+            maxCount = count;
+            break
+        end
+    end
+    % returns -1 if bust
+    SUM = maxCount;
+end
