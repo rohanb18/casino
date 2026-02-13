@@ -1,0 +1,16 @@
+function [QUESTION, TRUTH] = true_false()
+    % Open questions.txt
+    questions = readlines('questions.txt');
+    % Swap each \ for a new line
+    for j=1:height(questions)
+        if (contains(questions(j), '\'))
+            questions(j) = regexprep(questions(j), '\', '\n');
+        end
+    end
+    % Open t/f text file (0/1's)
+    tID = fopen('truths.txt');
+    truths = fscanf(tID, '%i');
+    i = randi([1, length(questions)], 1);
+    QUESTION = splitlines(questions(i));
+    TRUTH = truths(i);
+end
