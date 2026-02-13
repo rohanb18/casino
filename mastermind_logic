@@ -1,0 +1,98 @@
+function [GAME_STATE, ERRORS, CREDITS, BET] = mastermind_logic(row, col, game_state, answer, credits, bet)        
+    % Logic for changing a color or entering a guess
+    % Check blanks:
+    slotA = game_state(height(game_state), 1) ~= 7;
+    slotB = game_state(height(game_state), 2) ~= 7;
+    slotC = game_state(height(game_state), 3) ~= 7;
+    slotD = game_state(height(game_state), 4) ~= 7;
+    if (height(game_state) == row)
+        if (col>=4 && col<=7)
+            % Columns 4-7 switch colors
+            if (game_state(row, col-3) == 6 || game_state(row, col-3) ==  7)
+                game_state(row, col-3) = 1;
+            else
+                game_state(row, col-3) = game_state(row, col-3) + 1;
+            end
+        elseif (col == 8 && slotA && slotB && slotC && slotD)
+            % Col 8 guess
+            game_state(height(game_state) + 1, 1:4) = [7, 7, 7, 7];
+        end
+    end
+    % Return the Game State
+    GAME_STATE = game_state;
+    
+    % Default to an incorrect guess
+    CORRECT_GUESS = 0;
+    % Create Error Array [green, red]
+    errors = ones(height(game_state) - 1, 2);
+    for i = 1:height(game_state)-1
+        % Count the number of each color for one round
+        NUM_COLORS = [0,0,0,0,0,0,0];
+        for j = 1:4
+            color = game_state(i, j);
+            NUM_COLORS(color) = NUM_COLORS(color) + 1;
+        end
+        
+        % Count the number of each color for the answer
+        ANSWER_COLORS = [0,0,0,0,0,0,0];
+        for k = 1:4
+            color = answer(k);
+            ANSWER_COLORS(color) = ANSWER_COLORS(color) + 1;
+        end
+        
+        
+        % Get the number of green values
+        green = 0;
+        for l = 1:4
+            if (game_state(i, l) == answer(l))
+                green = green + 1;
+            end
+        end
+
+        % Get the number of red values
+        red = 0;
+        for m = 1:6
+            if (NUM_COLORS(m) >= ANSWER_COLORS(m))
+                red = red + ANSWER_COLORS(m);
+            else
+                red = red + NUM_COLORS(m);
+            end
+        end
+        red = red - green;
+        
+        % Add the green and red errors to the errors array
+        errors(i, 1:2) = [green, red];
+        
+        % Check for correct guess
+        if (green == 4)
+            CORRECT_GUESS = 1;
+        end
+    end
+    ERRORS = errors;
+    
+    % Add bet if won
+    if (CORRECT_GUESS == 1)
+        CREDITS = credits + bet;
+    elseif (height(game_state) == 7)
+        CREDITS = credits - bet;
+    else
+        CREDITS = credits;
+    end
+    
+    % Change bet
+    if (height(game_state) == 1)
+        % Increase bet
+        if (col == 10 && row == 2)
+            bet = bet + 1;
+            if (bet > credits)
+                bet = credits;
+            end
+        elseif (col == 12 && row == 2)
+            bet = bet - 1;
+            if (bet < 0)
+                bet = 0;
+            end
+        end
+    end
+    BET = bet;
+end
