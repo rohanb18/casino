@@ -1,0 +1,119 @@
+function [BACKGROUND, FOREGROUND] = blackjack_image(pCards, dCards, credits, bet, showCards, start)
+    % initialize a 9x13 foreground and background array
+    background = [ones(9, 13)];
+    foreground = [ones(9, 13)];
+    
+    % Background Features
+    Blanks = 77:79;
+    White_Card = 2;
+    Back_Card = 3;
+    % White squares behind digits
+    background(5, 6:8) = Blanks;
+    background(8, 2:4) = Blanks;
+    
+    % Cards
+    if (start == 0)
+        background(3, 6) = White_Card;
+        background(3, 8) = White_Card;
+        background(7, 6) = White_Card;
+        background(7, 8) = White_Card;
+        foreground(3, 6) = Back_Card;
+        foreground(3, 8) = Back_Card;
+        foreground(7, 6) = Back_Card;
+        foreground(7, 8) = Back_Card;
+    else
+        % Length of cards (plus middle if even)
+        if (mod(length(dCards), 2))
+            dLength = length(dCards);
+        else
+            dLength = length(dCards) + 1;
+        end
+        if (mod(length(pCards), 2) == 1)
+            pLength = length(pCards);
+        else
+            pLength = length(pCards) + 1;
+        end
+        % Offset from first column
+        dealerCOffset = (13-dLength)/2;
+        playerCOffset = (13-pLength)/2;
+        PNGOffset = 20;
+        % Display Player Cards
+        for i = 1:pLength
+            if (mod(length(pCards), 2) == 1)
+                background(7, playerCOffset + i) = White_Card;
+                foreground(7, playerCOffset + i) = pCards(i) + PNGOffset;
+            else
+                if ~(i==(pLength + 1)/2)
+                    background(7, playerCOffset + i) = White_Card;
+                    if (i>(pLength + 1)/2)
+                        foreground(7, playerCOffset + i) = pCards(i - 1) + PNGOffset;
+                    else
+                        foreground(7, playerCOffset + i) = pCards(i) + PNGOffset;
+                    end
+                end
+            end
+        end
+        % Display Dealer Cards
+        if (showCards == 1)
+            for i = 1:dLength
+                if (mod(length(dCards), 2) == 1)
+                    background(3, dealerCOffset + i) = White_Card;
+                    foreground(3, dealerCOffset + i) = dCards(i) + PNGOffset;
+                else
+                    if ~(i==(dLength + 1)/2)
+                        background(3, dealerCOffset + i) = White_Card;
+                        if (i>(dLength + 1)/2)
+                            foreground(3, dealerCOffset + i) = dCards(i - 1) + PNGOffset;
+                        else
+                            foreground(3, dealerCOffset + i) = dCards(i) + PNGOffset;
+                        end
+                    end
+                end
+            end
+        else
+            background(3, 6) = White_Card;
+            background(3, 8) = White_Card;
+            foreground(3, 6) = Back_Card;
+            foreground(3, 8) = dCards(2) + PNGOffset;
+        end
+    end
+    
+    % Draw the betting pool in the middle
+    third_digit = mod(bet, 10);
+    second_digit = mod((bet - third_digit) / 10, 10);
+    first_digit = mod((bet - third_digit - second_digit*10) / 100, 10);
+    % draw to the foreground
+    if (first_digit ~= 0)
+        foreground(5, 6) = first_digit + 11;
+        foreground(5, 7) = second_digit + 11;
+        foreground(5, 8) = third_digit + 11;
+    elseif (second_digit ~= 0)
+        foreground(5, 7) = second_digit + 11;
+        foreground(5, 8) = third_digit + 11;
+    elseif (third_digit ~= 0)
+        foreground(5, 8) = third_digit + 11;
+    else
+        foreground(5, 8) = 11;
+    end
+    
+    % Draw the number of credits at the bottom left
+    third_digit = mod(credits, 10);
+    second_digit = mod((credits - third_digit) / 10, 10);
+    first_digit = mod((credits - third_digit - second_digit*10) / 100, 10);
+    % draw to the foreground
+    if (first_digit ~= 0)
+        foreground(8, 2) = first_digit + 11;
+        foreground(8, 3) = second_digit + 11;
+        foreground(8, 4) = third_digit + 11;
+    elseif (second_digit ~= 0)
+        foreground(8, 3) = second_digit + 11;
+        foreground(8, 4) = third_digit + 11;
+    elseif (third_digit ~= 0)
+        foreground(8, 4) = third_digit + 11;
+    else
+        foreground(8, 4) = 11;
+    end
+    
+    BACKGROUND = background;
+    FOREGROUND = foreground;
+end
